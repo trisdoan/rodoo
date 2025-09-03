@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv sync --extra test
+      - name: Run tests
+        run: uv run pytest --cov=rodoo --cov-report=xml
+      - uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
