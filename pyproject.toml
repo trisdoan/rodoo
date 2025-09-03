@@ -24,6 +24,8 @@ test = [
 ]
 [tool.semantic_release]
 build_command = """
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add uv.lock
     uv build
