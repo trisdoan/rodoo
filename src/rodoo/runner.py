@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Optional, List
 import ast
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.console import Console
 import subprocess
 import shlex
 import os
@@ -35,8 +34,8 @@ Runner organizes Odoo source code and development environments in the following 
     └── enterprise/              # Odoo Enterprise worktree (from enterprise.git)
 ├── venvs/                       # Python virtual environments
 │   └── odoo-{version}-py{python_version}/
-├── pid/                         # active Odoo process 
-│   └── 
+├── pid/                         # active Odoo process
+│   └──
 
 """
 

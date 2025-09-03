@@ -4,4 +4,3 @@ class UserError(Exception):
 
 class UserWarning(Exception):
     pass
-
