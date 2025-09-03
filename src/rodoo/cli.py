@@ -1,3 +1,12 @@
+"""
+Desired behaviors of cli
+1. No profile, no args → look for config in cwd → if none, exit with help
+2. Profile passed → load config → if missing, error
+3. Profile + args → load config, prompt to update
+4. If no --profile but config exists → prompt to update
+5. Args only, no profile, no config → run directly
+"""
+
 from pathlib import Path
 import typer
 from typing import Optional
@@ -11,15 +20,6 @@ from rodoo.config import (
 )
 
 app = typer.Typer(pretty_exceptions_enable=False)
-
-"""
-Desired behaviors of cli
-1. No profile, no args → look for config in cwd → if none, exit with help
-2. Profile passed → load config → if missing, error
-3. Profile + args → load config, prompt to update
-4. If no --profile but config exists → prompt to update
-5. Args only, no profile, no config → run directly
-"""
 
 
 def _parse_cli_params(args: dict) -> dict:

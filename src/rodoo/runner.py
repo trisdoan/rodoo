@@ -1,3 +1,19 @@
+"""
+Runner organizes Odoo source code and development environments in the following directory structure:
+
+~/.config/rodoo/
+├── odoo.git/                    # Bare repository for Odoo core
+├── enterprise.git/              # Bare repository for Odoo Enterprise
+└── {version}/                   # Version-specific directory
+    ├── odoo/                    # Odoo core worktree (from odoo.git)
+    └── enterprise/              # Odoo Enterprise worktree (from enterprise.git)
+├── venvs/                       # Python virtual environments
+│   └── odoo-{version}-py{python_version}/
+├── pid/                         # active Odoo process
+│   └──
+
+"""
+
 from dataclasses import dataclass
 from platformdirs import user_config_path
 from pathlib import Path
@@ -21,23 +37,6 @@ ENT_ODOO_URL = "git@github.com:odoo/enterprise.git"
 CONFIG_DIR = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
 BARE_REPO = CONFIG_DIR / "odoo.git"
 ENT_BARE_REPO = CONFIG_DIR / "enterprise.git"
-
-
-"""
-Runner organizes Odoo source code and development environments in the following directory structure:
-
-~/.config/rodoo/
-├── odoo.git/                    # Bare repository for Odoo core
-├── enterprise.git/              # Bare repository for Odoo Enterprise
-└── {version}/                   # Version-specific directory
-    ├── odoo/                    # Odoo core worktree (from odoo.git)
-    └── enterprise/              # Odoo Enterprise worktree (from enterprise.git)
-├── venvs/                       # Python virtual environments
-│   └── odoo-{version}-py{python_version}/
-├── pid/                         # active Odoo process
-│   └──
-
-"""
 
 
 @dataclass
@@ -402,12 +401,13 @@ class Runner:
 
     # TODO: workaround to fix failed buid
     def _patch_odoo_requirements(self):
-        requirements_file = self.odoo_root_dir / "odoo" / "requirements.txt"
-        if not requirements_file.is_file():
-            return
-
-        if self.version == 16.0:
-            content = requirements_file.read_text()
+        # requirements_file = self.odoo_root_dir / "odoo" / "requirements.txt"
+        # if not requirements_file.is_file():
+        #     return
+        #
+        # if self.version == 16.0:
+        #     content = requirements_file.read_text()
+        pass
 
     def _get_module_paths(self):
         paths = []

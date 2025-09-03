@@ -125,7 +125,7 @@ class TestRunnerSetupOdooSource:
 
         runner = Runner(modules=["base"], version=16.0, python_version="3.10")
 
-        with patch.object(runner, "_create_progress") as mock_progress:
+        with patch.object(runner, "_create_progress"):
             # Reset call count to ignore calls during initialization
             mock_run.reset_mock()
             runner._setup_odoo_source()
@@ -373,12 +373,13 @@ class TestRunnerSanityCheck:
     def test_sanity_check_missing_python_version(self):
         """Test _sanity_check with missing python version."""
         # Create a minimal runner instance with mocked dependencies
-        with patch("rodoo.runner.Runner._setup_odoo_source"), patch(
-            "rodoo.runner.Runner._is_env_ready"
-        ), patch("rodoo.runner.Runner._install_system_packages"), patch(
-            "rodoo.runner.Runner._setup_python_env"
-        ), patch("rodoo.runner.Runner._install_extra_python_packages"), patch(
-            "rodoo.runner.Runner._prepare_odoo_cli_params"
+        with (
+            patch("rodoo.runner.Runner._setup_odoo_source"),
+            patch("rodoo.runner.Runner._is_env_ready"),
+            patch("rodoo.runner.Runner._install_system_packages"),
+            patch("rodoo.runner.Runner._setup_python_env"),
+            patch("rodoo.runner.Runner._install_extra_python_packages"),
+            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
         ):
             runner = Runner.__new__(Runner)
             runner.modules = ["base"]
@@ -395,12 +396,13 @@ class TestRunnerSanityCheck:
     def test_sanity_check_no_modules(self):
         """Test _sanity_check with no modules."""
         # Create a minimal runner instance with mocked dependencies
-        with patch("rodoo.runner.Runner._setup_odoo_source"), patch(
-            "rodoo.runner.Runner._is_env_ready"
-        ), patch("rodoo.runner.Runner._install_system_packages"), patch(
-            "rodoo.runner.Runner._setup_python_env"
-        ), patch("rodoo.runner.Runner._install_extra_python_packages"), patch(
-            "rodoo.runner.Runner._prepare_odoo_cli_params"
+        with (
+            patch("rodoo.runner.Runner._setup_odoo_source"),
+            patch("rodoo.runner.Runner._is_env_ready"),
+            patch("rodoo.runner.Runner._install_system_packages"),
+            patch("rodoo.runner.Runner._setup_python_env"),
+            patch("rodoo.runner.Runner._install_extra_python_packages"),
+            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
         ):
             runner = Runner.__new__(Runner)
             runner.modules = []
@@ -414,17 +416,19 @@ class TestRunnerSanityCheck:
     def test_sanity_check_missing_module(self):
         """Test _sanity_check with missing module dependency."""
         # Create a minimal runner instance with mocked dependencies
-        with patch("rodoo.runner.Runner._setup_odoo_source"), patch(
-            "rodoo.runner.Runner._is_env_ready"
-        ), patch("rodoo.runner.Runner._install_system_packages"), patch(
-            "rodoo.runner.Runner._setup_python_env"
-        ), patch("rodoo.runner.Runner._install_extra_python_packages"), patch(
-            "rodoo.runner.Runner._prepare_odoo_cli_params"
-        ), patch("pathlib.Path.is_dir", return_value=True), patch(
-            "pathlib.Path.iterdir"
-        ) as mock_iterdir, patch("pathlib.Path.exists", return_value=True), patch(
-            "builtins.open"
-        ), patch("ast.literal_eval", return_value={"depends": ["base"]}):
+        with (
+            patch("rodoo.runner.Runner._setup_odoo_source"),
+            patch("rodoo.runner.Runner._is_env_ready"),
+            patch("rodoo.runner.Runner._install_system_packages"),
+            patch("rodoo.runner.Runner._setup_python_env"),
+            patch("rodoo.runner.Runner._install_extra_python_packages"),
+            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.iterdir"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("builtins.open"),
+            patch("ast.literal_eval", return_value={"depends": ["base"]}),
+        ):
             runner = Runner.__new__(Runner)
             runner.modules = ["sale"]
             runner.version = 16.0
@@ -519,13 +523,15 @@ class TestRunnerPrepareOdooCliParams:
     def test_prepare_odoo_cli_params_basic(self):
         """Test _prepare_odoo_cli_params with basic parameters."""
         # Create a minimal runner instance
-        with patch("rodoo.runner.Runner._setup_odoo_source"), patch(
-            "rodoo.runner.Runner._is_env_ready"
-        ), patch("rodoo.runner.Runner._install_system_packages"), patch(
-            "rodoo.runner.Runner._setup_python_env"
-        ), patch("rodoo.runner.Runner._install_extra_python_packages"), patch(
-            "rodoo.runner.Runner._sanity_check"
-        ), patch("rodoo.runner.Runner._get_module_paths", return_value=[]):
+        with (
+            patch("rodoo.runner.Runner._setup_odoo_source"),
+            patch("rodoo.runner.Runner._is_env_ready"),
+            patch("rodoo.runner.Runner._install_system_packages"),
+            patch("rodoo.runner.Runner._setup_python_env"),
+            patch("rodoo.runner.Runner._install_extra_python_packages"),
+            patch("rodoo.runner.Runner._sanity_check"),
+            patch("rodoo.runner.Runner._get_module_paths", return_value=[]),
+        ):
             runner = Runner.__new__(Runner)
             runner.modules = ["base", "sale"]
             runner.version = 16.0
@@ -557,13 +563,15 @@ class TestRunnerPrepareOdooCliParams:
     def test_prepare_odoo_cli_params_with_load(self):
         """Test _prepare_odoo_cli_params with load parameter."""
         # Create a minimal runner instance
-        with patch("rodoo.runner.Runner._setup_odoo_source"), patch(
-            "rodoo.runner.Runner._is_env_ready"
-        ), patch("rodoo.runner.Runner._install_system_packages"), patch(
-            "rodoo.runner.Runner._setup_python_env"
-        ), patch("rodoo.runner.Runner._install_extra_python_packages"), patch(
-            "rodoo.runner.Runner._sanity_check"
-        ), patch("rodoo.runner.Runner._get_module_paths", return_value=[]):
+        with (
+            patch("rodoo.runner.Runner._setup_odoo_source"),
+            patch("rodoo.runner.Runner._is_env_ready"),
+            patch("rodoo.runner.Runner._install_system_packages"),
+            patch("rodoo.runner.Runner._setup_python_env"),
+            patch("rodoo.runner.Runner._install_extra_python_packages"),
+            patch("rodoo.runner.Runner._sanity_check"),
+            patch("rodoo.runner.Runner._get_module_paths", return_value=[]),
+        ):
             runner = Runner.__new__(Runner)
             runner.modules = ["base"]
             runner.version = 16.0

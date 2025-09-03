@@ -186,7 +186,7 @@ class TestConstructRunner:
             mock_runner = MagicMock()
             mock_runner_class.return_value = mock_runner
 
-            result = _construct_runner(config, args)
+            _construct_runner(config, args)
 
             # Just check that Runner was called with the basic parameters
             call_args = mock_runner_class.call_args
@@ -203,7 +203,7 @@ class TestConstructRunner:
             mock_runner = MagicMock()
             mock_runner_class.return_value = mock_runner
 
-            result = _construct_runner(config, args)
+            _construct_runner(config, args)
 
             # Should use modules from args
             call_args = mock_runner_class.call_args[1]

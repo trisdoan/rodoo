@@ -178,10 +178,9 @@ class TestSanityCheck:
     def test_sanity_check_invalid_profile_type(self):
         """Test _sanity_check with invalid profile type."""
         config = {"profile": "invalid"}
-        with patch("rodoo.output.Output.error") as mock_error:
+        with patch("rodoo.output.Output.error"):
             with pytest.raises(AttributeError):
                 _sanity_check(config)
-            # Due to a bug in the source code, it tries to iterate over a string
 
     def test_sanity_check_invalid_version_type(self):
         """Test _sanity_check with invalid version type."""
