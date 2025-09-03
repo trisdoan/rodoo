@@ -16,11 +16,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+build = ["uv ~= 0.8.14"]
 test = [
     "pytest>=7.0.0",
     "pytest-cov",
     "pytest-mock",
 ]
+[tool.semantic_release]
+build_command = """
+    uv lock --upgrade-package "$PACKAGE_NAME"
+    git add uv.lock
+    uv build
+"""
 
 [project.scripts]
 rodoo = "rodoo.cli:app"
