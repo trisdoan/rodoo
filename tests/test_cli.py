@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from click.exceptions import Exit
-from rodoo.cli import (
+from rodoo.utils.misc import (
     _parse_cli_params,
     _validate_required_cli_params,
     _handle_no_cli_params,
