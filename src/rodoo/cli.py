@@ -9,10 +9,11 @@ Desired behaviors of cli
 
 from pathlib import Path
 import typer
-from typing import Optional
+from typing import Optional, List
 from rodoo.runner import Runner
 from rodoo.output import Output
 from rodoo.exceptions import UserError
+from rodoo.utils import perform_update
 from rodoo.config import (
     ConfigFile,
     load_and_merge_profiles,
@@ -209,6 +210,48 @@ def start(
     except UserError as e:
         Output.error(str(e))
         raise typer.Exit(1)
+
+
+@app.command()
+def update(
+    versions: Optional[str] = typer.Option(
+        None, "--versions", "-v", help="Odoo version(s) to update, comma-separated"
+    ),
+):
+    """
+    Clone and update Odoo src code
+    """
+    source_path = Path.home() / ".rodoo" / "src"
+    source_path.mkdir(parents=True, exist_ok=True)
+
+    versions_to_update: List[str] = []
+    if versions:
+        versions_to_update = [v.strip() for v in versions.split(",")]
+    else:
+        # scan the source directory to find all existing versions to update.
+        Output.info(
+            f"No versions specified. Scanning {source_path} for existing versions..."
+        )
+        existing_versions = []
+        for item in source_path.iterdir():
+            if item.is_dir():
+                try:
+                    float(item.name)
+                    existing_versions.append(item.name)
+                except ValueError:
+                    # This ignores non-version directories like the 'odoo' and 'enterprise' repos.
+                    continue
+
+        versions_to_update = sorted(existing_versions)
+
+    if versions_to_update:
+        perform_update(versions_to_update, source_path)
+        Output.success("Odoo sources updated successfully.")
+    else:
+        Output.error(
+            f"No installed Odoo versions found in {source_path} to update. "
+            "To install a new version, use the --versions flag (e.g., rodoo update --versions 17.0)."
+        )
 
 
 if __name__ == "__main__":
