@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 import subprocess
 from rodoo.output import Output
-from rodoo.runner import Runner
+from rodoo.runner import Runner, ODOO_URL, ENT_ODOO_URL
 import typer
 from typing import Optional
 from rodoo.config import (
@@ -14,8 +14,8 @@ from rodoo.config import (
 
 def perform_update(versions_to_update: List[str], source_path: Path):
     repos = {
-        "odoo": "https://github.com/odoo/odoo.git",
-        "enterprise": "https://github.com/odoo/enterprise.git",
+        "odoo": ODOO_URL,
+        "enterprise": ENT_ODOO_URL,
     }
 
     # First, ensure the main 'odoo' and 'enterprise' repos are cloned and up-to-date.
