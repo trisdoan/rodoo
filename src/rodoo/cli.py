@@ -57,11 +57,17 @@ def _handle_no_cli_params(profile: Optional[str]) -> dict:
     profile_name_to_use = profile
     if not profile_name_to_use:
         if len(all_profiles) > 1:
-            profile_name_to_use = typer.prompt(
-                f"Which profile to run? ({', '.join(all_profiles.keys())})",
-                default="",
-                show_default=False,
+            profiles_list = list(all_profiles.keys())
+            profile_display = "\n".join(
+                [f"[{i+1}] {name}" for i, name in enumerate(profiles_list)]
             )
+            prompt_message = f"Which profile to run:\n{profile_display}\n"
+            choice = typer.prompt(prompt_message, default="", show_default=False)
+
+            if choice.isdigit() and 1 <= int(choice) <= len(profiles_list):
+                profile_name_to_use = profiles_list[int(choice) - 1]
+            else:
+                profile_name_to_use = choice
         elif len(all_profiles) == 1:
             profile_name_to_use = next(iter(all_profiles))
 
@@ -73,7 +79,7 @@ def _handle_no_cli_params(profile: Optional[str]) -> dict:
         raise typer.Exit(1)
 
     config_path = profile_sources[profile_name_to_use]
-    if Output.confirm(f"Run with profile '{profile_name_to_use}' from {config_path}?"):
+    if Output.confirm(f"Run with profile '{profile_name_to_use}' from {config_path}?", default=True):
         config = all_profiles[profile_name_to_use]
     else:
         raise typer.Exit(1)
@@ -99,10 +105,19 @@ def _handle_cli_params_present(profile: Optional[str], cli_params: dict) -> dict
         elif len(profiles_in_cwd) == 1:
             profile_to_update = next(iter(profiles_in_cwd))
         elif len(profiles_in_cwd) > 1:
-            profile_to_update = typer.prompt(
-                f"Which profile to update? ({', '.join(profiles_in_cwd.keys())}) [leave blank for none]",
-                default="",
+            profiles_list = list(profiles_in_cwd.keys())
+            profile_display = "\n".join(
+                [f"[{i+1}] {name}" for i, name in enumerate(profiles_list)]
             )
+            prompt_message = (
+                f"Which profile to update:\n{profile_display}\n[leave blank for none]"
+            )
+            choice = typer.prompt(prompt_message, default="", show_default=False)
+
+            if choice.isdigit() and 1 <= int(choice) <= len(profiles_list):
+                profile_to_update = profiles_list[int(choice) - 1]
+            else:
+                profile_to_update = choice
 
         if profile_to_update and profile_to_update in profiles_in_cwd:
             if Output.confirm(
