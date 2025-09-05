@@ -19,5 +19,5 @@ class Output:
         typer.secho(f"✖ {message}", fg=typer.colors.RED, err=True)
 
     @staticmethod
-    def confirm(message: str) -> bool:
-        return typer.confirm(message)
+    def confirm(message: str, default: bool = False) -> bool:
+        return typer.confirm(message, default=default)
