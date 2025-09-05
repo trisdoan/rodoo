@@ -32,7 +32,8 @@ build_command = """
 """
 
 [project.scripts]
-rodoo = "rodoo.cli:app"
+rodoo = "rodoo.cli.main:app"
+rodoo-oca = "rodoo.cli.oca:app"
 
 [build-system]
 requires = ["uv_build>=0.8.4,<0.9.0"]
