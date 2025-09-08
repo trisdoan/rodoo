@@ -115,17 +115,59 @@ class Runner:
             module_name = "_".join(self.modules) if self.modules else "nan"
             self.db = f"v{version_major}_{module_name}"
 
-        # prepare odoo cli arguments
-        self.odoo_cli_params = self._prepare_odoo_cli_params()
-
+    # FIXME: improve how to construct odoo options
+    # code should be more efficient
     ### main API ###
     def run(self):
+        self.odoo_cli_params = self._prepare_odoo_cli_params()
         self._foreground_run()
 
     def upgrade(self):
-        pass
+        options = []
+        options.extend(["--stop-after-init"])
+        options.extend(["-d", self.db])
+        options.extend(["--addons-path", ",".join(str(p) for p in self.modules_paths)])
+        options.extend(["-u", ",".join(self.modules)])
+        managed_params = {
+            "db_host": self.db_host,
+            "db_user": self.db_user,
+            "db_password": self.db_password,
+        }
+        existing_flags = {opt.split("=")[0] for opt in options if opt.startswith("--")}
 
+        for key, value in managed_params.items():
+            cli_key = f"--{key}"
+            if value and cli_key not in existing_flags:
+                options.extend([cli_key, str(value)])
+
+        self.odoo_cli_params = options
+        self._foreground_run()
+
+    # FIXME: support more option-test-related like tag
     def run_test(self):
+        options = []
+        options.extend(["--test-enable"])
+        options.extend(["--stop-after-init"])
+        options.extend(["-d", self.db])
+        options.extend(["--addons-path", ",".join(str(p) for p in self.modules_paths)])
+        managed_params = {
+            "db_host": self.db_host,
+            "db_user": self.db_user,
+            "db_password": self.db_password,
+        }
+        existing_flags = {opt.split("=")[0] for opt in options if opt.startswith("--")}
+
+        for key, value in managed_params.items():
+            cli_key = f"--{key}"
+            if value and cli_key not in existing_flags:
+                options.extend([cli_key, str(value)])
+
+        self.odoo_cli_params = options
+        return self._foreground_run()
+
+    # FIXME: implement
+    # based on https://www.odoo.com/documentation/18.0/developer/reference/cli.html#internationalisation
+    def translation(self):
         pass
 
     # TODO: implement detach mode
@@ -483,11 +525,11 @@ class Runner:
                 options.extend([cli_key, str(value)])
 
         # path to store server pid, used to identify active odoo process
-        options.extend(
-            [
-                "--pidfile",
-                "=",
-            ]
-        )
+        # options.extend(
+        #     [
+        #         "--pidfile",
+        #         "=",
+        #     ]
+        # )
 
         return options
