@@ -30,7 +30,7 @@ def start(
         None, "--version", "-v", help="Odoo version"
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
-    db: Optional[str] = typer.Option(None, help="Database name"),
+    db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
 ):
     """Running Odoo instance"""
     args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
@@ -42,6 +42,124 @@ def start(
     except UserError as e:
         Output.error(str(e))
         raise typer.Exit(1)
+
+
+@app.command()
+def upgrade(
+    profile: Optional[str] = typer.Option(
+        None, "--profile", "-p", help="Profile name to run Odoo"
+    ),
+    module: Optional[str] = typer.Option(
+        None, "--module", "-m", help="Odoo Module name(s), comma-separated"
+    ),
+    version: Optional[float] = typer.Option(
+        None, "--version", "-v", help="Odoo version"
+    ),
+    python_version: Optional[str] = typer.Option(None, "--python", "-py"),
+    db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+):
+    """
+    Running update Odoo and exist
+    """
+    args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
+    config = process_cli_args(profile, args)
+    try:
+        runner = construct_runner(config, args)
+        runner.upgrade()
+    except UserError as e:
+        Output.error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command()
+def test(
+    profile: Optional[str] = typer.Option(
+        None, "--profile", "-p", help="Profile name to run Odoo"
+    ),
+    module: Optional[str] = typer.Option(
+        None, "--module", "-m", help="Odoo Module name(s), comma-separated"
+    ),
+    version: Optional[float] = typer.Option(
+        None, "--version", "-v", help="Odoo version"
+    ),
+    python_version: Optional[str] = typer.Option(None, "--python", "-py"),
+    db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+):
+    """
+    Running tests
+    """
+    args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
+    config = process_cli_args(profile, args)
+    try:
+        runner = construct_runner(config, args)
+        runner.run_test()
+    except UserError as e:
+        Output.error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command()
+def shell(
+    profile: Optional[str] = typer.Option(
+        None, "--profile", "-p", help="Profile name to run Odoo"
+    ),
+    module: Optional[str] = typer.Option(
+        None, "--module", "-m", help="Odoo Module name(s), comma-separated"
+    ),
+    version: Optional[float] = typer.Option(
+        None, "--version", "-v", help="Odoo version"
+    ),
+    python_version: Optional[str] = typer.Option(None, "--python", "-py"),
+    db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+):
+    """
+    Running Odoo shell
+    """
+    args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
+    config = process_cli_args(profile, args)
+    try:
+        runner = construct_runner(config, args)
+        runner.run_shell()
+    except UserError as e:
+        Output.error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command()
+def translate(
+    language: str = typer.Option(..., "--language", "-l", help="Language to translate"),
+    profile: Optional[str] = typer.Option(
+        None, "--profile", "-p", help="Profile name to run Odoo"
+    ),
+    module: Optional[str] = typer.Option(
+        None, "--module", "-m", help="Odoo Module name(s), comma-separated"
+    ),
+    version: Optional[float] = typer.Option(
+        None, "--version", "-v", help="Odoo version"
+    ),
+    python_version: Optional[str] = typer.Option(None, "--python", "-py"),
+    db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+):
+    """
+    Export translation file for a module
+    """
+    args = {
+        k: v
+        for k, v in locals().items()
+        if k not in ["profile", "language"] and v is not None
+    }
+    config = process_cli_args(profile, args)
+    try:
+        runner = construct_runner(config, args)
+        runner.export_translation(language)
+    except UserError as e:
+        Output.error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command()
+def deps_tree():
+    pass
 
 
 @app.command()
