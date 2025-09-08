@@ -21,15 +21,15 @@ from typing import Optional, List
 import ast
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import subprocess
-import shlex
+
 import os
-import time
 import typer
 import json
 
 from .distro_dependency import get_distro
 from .config import APP_NAME
 from .exceptions import UserError
+from .odoo_cli import RunCLI, UpgradeCLI, TestCLI, ShellCLI, TranslateCLI
 from .output import Output
 
 ODOO_URL = "git@github.com:odoo/odoo.git"
@@ -115,78 +115,82 @@ class Runner:
             module_name = "_".join(self.modules) if self.modules else "nan"
             self.db = f"v{version_major}_{module_name}"
 
-        # prepare odoo cli arguments
-        self.odoo_cli_params = self._prepare_odoo_cli_params()
-
     ### main API ###
     def run(self):
-        self._foreground_run()
+        self.odoo_cli_params = RunCLI(self).build_command()
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+        ] + self.odoo_cli_params
+
+        self._foreground_run(cmd)
 
     def upgrade(self):
-        pass
+        self.odoo_cli_params = UpgradeCLI(self).build_command()
+        self._foreground_run()
 
     def run_test(self):
-        pass
+        self.odoo_cli_params = TestCLI(self).build_command()
+        return self._foreground_run()
 
-    # TODO: implement detach mode
-    def _background_run(self):
+    def run_shell(self):
+        self.odoo_cli_params = ShellCLI(self).build_command()
         cmd = [
             "uv",
             "run",
             "--python",
             self.python_version,
             "odoo",
+            "shell",
         ] + self.odoo_cli_params
 
         process_env = os.environ.copy()
         process_env["VIRTUAL_ENV"] = str(self.venv_path)
 
-        try:
-            process = subprocess.Popen(
-                cmd,
-                env=process_env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            # Wait for a few seconds to see if it fails
-            time.sleep(3)
-            # Check if the process has already terminated
-            poll_result = process.poll()
-            if poll_result is not None:
-                if poll_result != 0:
-                    stdout, stderr = process.communicate()
-                    raise UserError(
-                        f"Odoo failed to start with exit code {poll_result}.\n--- STDERR ---\n{stderr}\n--- STDOUT ---\n{stdout}"
-                    )
-            else:
-                # Assume success after 3s
-                Output.success(
-                    f"Odoo server started in the background with PID: {process.pid}"
+        self._foreground_run(cmd)
+
+    def export_translation(self, language: str):
+        if not self.modules:
+            raise UserError("At least one module is required for translation export.")
+
+        for module_name in self.modules:
+            module_path = None
+            for path in self.modules_paths:
+                if (path / module_name).exists():
+                    module_path = path / module_name
+                    break
+
+            if not module_path:
+                Output.warning(
+                    f"Could not find path for module '{module_name}', skipping."
                 )
-                Output.info("You can stop the server using the 'stop' command.")
+                continue
 
-        except FileNotFoundError:
-            raise UserError(f"Command not found: {cmd[0]}")
-        except Exception as e:
-            raise UserError(f"Odoo failed to start. Details:\n{e}") from e
+            i18n_path = module_path / "i18n"
+            i18n_path.mkdir(exist_ok=True)
+            translation_file = i18n_path / f"{language}.po"
 
-    def _foreground_run(self):
-        cmd = [
-            "uv",
-            "run",
-            "--python",
-            self.python_version,
-            "odoo",
-        ] + self.odoo_cli_params
+            self.odoo_cli_params = TranslateCLI(
+                self, module_name, language, translation_file
+            ).build_command()
+            self._foreground_run()
+            Output.success(
+                f"Translation file for '{module_name}' exported to {translation_file}"
+            )
 
+    def _foreground_run(self, cmd):
         process_env = os.environ.copy()
         process_env["VIRTUAL_ENV"] = str(self.venv_path)
 
         try:
-            subprocess.run(cmd, env=process_env)
+            subprocess.run(cmd, env=process_env, check=True)
         except FileNotFoundError:
             raise UserError(f"Command not found: {cmd[0]}")
+        except subprocess.CalledProcessError:
+            raise UserError("Odoo command execution failed.")
         except Exception as e:
             raise UserError(f"Odoo failed to start. Details:\n{e}") from e
 
@@ -400,16 +404,6 @@ class Runner:
                 error_msg += f"The following transitive dependencies were not found: {', '.join(missing_transitive)}."
             raise UserError(error_msg)
 
-    # TODO: workaround to fix failed buid
-    def _patch_odoo_requirements(self):
-        # requirements_file = self.odoo_root_dir / "odoo" / "requirements.txt"
-        # if not requirements_file.is_file():
-        #     return
-        #
-        # if self.version == 16.0:
-        #     content = requirements_file.read_text()
-        pass
-
     def _get_module_paths(self):
         paths = []
         if (path := self.odoo_src_path / "addons").exists():
@@ -447,48 +441,3 @@ class Runner:
                     env=env,
                     capture_output=True,
                 )
-
-    def _prepare_odoo_cli_params(self):
-        options = []
-
-        options.extend(["-d", self.db])
-        options.extend(["--addons-path", ",".join(str(p) for p in self.modules_paths)])
-
-        if self.force_install:
-            options.extend(["-i", ",".join(self.modules)])
-        if self.force_update:
-            options.extend(["-u", ",".join(self.modules)])
-
-        if self.load:
-            options.extend(["--load", ",".join(self.load)])
-
-        if self.extra_params:
-            options.extend(shlex.split(self.extra_params))
-
-        managed_params = {
-            "db_host": self.db_host,
-            "db_user": self.db_user,
-            "db_password": self.db_password,
-            "workers": self.workers,
-            "max-cron-threads": self.max_cron_threads,
-            "limit-time-cpu": self.limit_time_cpu,
-            "limit-time-real": self.limit_time_real,
-            "http-interface": self.http_interface,
-        }
-
-        existing_flags = {opt.split("=")[0] for opt in options if opt.startswith("--")}
-
-        for key, value in managed_params.items():
-            cli_key = f"--{key}"
-            if value and cli_key not in existing_flags:
-                options.extend([cli_key, str(value)])
-
-        # path to store server pid, used to identify active odoo process
-        options.extend(
-            [
-                "--pidfile",
-                "=",
-            ]
-        )
-
-        return options
