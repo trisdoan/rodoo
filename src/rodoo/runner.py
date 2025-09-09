@@ -143,6 +143,60 @@ class Runner:
         self.odoo_cli_params = options
         self._foreground_run()
 
+    # FIXME: improve
+    def restore(self, db_name: str, dump_file: Path, copy: bool, force: bool):
+        Output.info(f"Restoring database '{db_name}' from '{dump_file}'...")
+
+        script = f"""
+import odoo
+from odoo.service import db
+from odoo.tools import config
+import sys
+
+config.parse_config([])
+config['db_host'] = '{self.db_host or ""}'
+config['db_user'] = '{self.db_user or ""}'
+config['db_password'] = '{self.db_password or ""}'
+
+db_exists = db.exp_db_exist('{db_name}')
+
+if db_exists:
+    if not {force}:
+        print(f"Error: Database '{db_name}' already exists. Use --force to overwrite.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Dropping existing database '{db_name}'...")
+    db.exp_drop('{db_name}')
+
+# The restore_db function will create the database
+print(f"Restoring dump to '{db_name}'...")
+db.restore_db('{db_name}', str('{dump_file}'), copy={copy})
+"""
+        cmd = ["uv", "run", "--python", self.python_version, "python", "-c", script]
+
+        process_env = os.environ.copy()
+        process_env["VIRTUAL_ENV"] = str(self.venv_path)
+
+        try:
+            with self._create_progress() as progress:
+                progress.add_task(
+                    description=f"Restoring database {db_name}...", total=None
+                )
+                result = subprocess.run(
+                    cmd, env=process_env, capture_output=True, text=True, check=True
+                )
+            Output.success(f"Database '{db_name}' restored successfully.")
+            if result.stdout:
+                # The script prints progress, so let's show it.
+                print(result.stdout)
+
+        except subprocess.CalledProcessError as e:
+            raise UserError(
+                f"Failed to restore database '{db_name}'.\n--- STDERR ---\n{e.stderr}\n--- STDOUT ---\n{e.stdout}"
+            )
+        except FileNotFoundError:
+            raise UserError(f"Command not found: {cmd[0]}")
+
     # FIXME: support more option-test-related like tag
     def run_test(self):
         options = []

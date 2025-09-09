@@ -71,6 +71,58 @@ def upgrade(
         raise typer.Exit(1)
 
 
+# FIXME: error with filestore, need to understand the problem
+@app.command()
+def restore(
+    profile: Optional[str] = typer.Option(
+        None, "--profile", "-p", help="Profile name to run Odoo"
+    ),
+    db: str = typer.Option(None, "--db", "-d", help="Database name to restore to"),
+    dump_file: Path = typer.Option(
+        "dump.sql", "--dump-file", "-f", help="Path to dump file to restore from"
+    ),
+    version: Optional[float] = typer.Option(
+        None, "--version", "-v", help="Odoo version"
+    ),
+    python_version: Optional[str] = typer.Option(None, "--python", "-py"),
+    copy: bool = typer.Option(
+        False, "--copy", help="Create a copy of the database for restore"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Force restore even if database exists (will be dropped)"
+    ),
+):
+    """Restore a database from a file."""
+    if copy and not db:
+        Output.error("The --copy flag requires the --db option to be specified.")
+        raise typer.Exit(1)
+
+    args = {
+        k: v
+        for k, v in locals().items()
+        if k not in ["profile", "dump_file", "copy", "force"] and v is not None
+    }
+
+    target_db = db
+    if copy:
+        target_db = f"{db}_copy"
+        Output.info(f"Restoring to a new database: {target_db}")
+        args["db"] = target_db
+
+    config = process_cli_args(profile, args)
+
+    try:
+        runner = construct_runner(config, args)
+
+        if not target_db:
+            target_db = runner.db
+
+        runner.restore(target_db, dump_file, copy, force)
+    except UserError as e:
+        Output.error(str(e))
+        raise typer.Exit(1)
+
+
 @app.command()
 def update(
     versions: Optional[str] = typer.Option(
