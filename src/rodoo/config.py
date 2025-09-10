@@ -12,6 +12,12 @@ import tomlkit
 FILENAMES = [".rodoo.toml", "rodoo.toml"]
 APP_NAME = "rodoo"
 
+ODOO_URL = "git@github.com:odoo/odoo.git"
+ENT_ODOO_URL = "git@github.com:odoo/enterprise.git"
+CONFIG_DIR = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
+BARE_REPO = CONFIG_DIR / "odoo.git"
+ENT_BARE_REPO = CONFIG_DIR / "enterprise.git"
+
 
 class Profile(TypedDict, total=False):
     modules: list[str]
@@ -199,15 +205,17 @@ def load_and_merge_profiles() -> tuple[dict[str, Profile], dict[str, Path]]:
 
 def _sanity_check(config: Config) -> None:
     if not isinstance(config, dict):
-        Output.error("Configuration must be a dictionary")
+        raise ConfigurationError("Configuration must be a dictionary")
 
     if "profile" in config:
         if not isinstance(config["profile"], dict):
-            Output.error("Profiles must be a dictionary")
+            raise ConfigurationError("Profiles must be a dictionary")
 
         for profile_name, profile_config in config["profile"].items():
             if not isinstance(profile_config, dict):
-                Output.error(f"Profile '{profile_name}' must be a dictionary")
+                raise ConfigurationError(
+                    f"Profile '{profile_name}' must be a dictionary"
+                )
 
             # TODO: validate if odoo modules found in path
             if "modules" in profile_config:
@@ -216,7 +224,7 @@ def _sanity_check(config: Config) -> None:
             if "version" in profile_config:
                 version = profile_config["version"]
                 if not isinstance(version, (int, float)):
-                    Output.error(
+                    raise ConfigurationError(
                         f"Version in profile '{profile_name}' must be a number"
                     )
             # TODO: a general check for other key in correct data types

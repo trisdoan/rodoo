@@ -298,25 +298,25 @@ class Arch(DistroDependency):
         if pacman_pkgs:
             cmd = ["sudo", "pacman", "-S", "--noconfirm"] + pacman_pkgs
             try:
-                subprocess.run(
+                run_subprocess(
                     cmd,
                     check=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
-            except Exception as e:
+            except SubprocessError as e:
                 Output.error(f"Failed to execute command: {e}")
 
         if aur_pkgs:
             cmd = ["yay", "-S", "--noconfirm"] + aur_pkgs
             try:
-                subprocess.run(
+                run_subprocess(
                     cmd,
                     check=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
-            except Exception as e:
+            except SubprocessError as e:
                 Output.error(f"Failed to execute command: {e}")
 
     def _get_install_cmd(self, packages: List[str]) -> List[str]:
