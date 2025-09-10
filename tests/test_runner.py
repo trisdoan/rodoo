@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from rodoo.runner import Runner
-from rodoo.exceptions import UserError
+from rodoo.utils.exceptions import UserError
 
 
 class TestRunnerInit:

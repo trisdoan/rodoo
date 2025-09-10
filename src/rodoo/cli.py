@@ -10,15 +10,20 @@ Desired behaviors of cli
 from pathlib import Path
 import typer
 from typing import Optional, List
-from rodoo.output import Output
-from rodoo.exceptions import UserError
-from rodoo.utils import perform_update, process_cli_args, construct_runner
-
+from rodoo.utils.exceptions import UserError
+from rodoo.utils.misc import (
+    Output,
+    perform_update,
+    process_cli_args,
+    construct_runner,
+    handle_exceptions,
+)
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
 @app.command()
+@handle_exceptions
 def start(
     profile: Optional[str] = typer.Option(
         None, "--profile", "-p", help="Profile name to run Odoo"
@@ -35,13 +40,8 @@ def start(
     """Running Odoo instance"""
     args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
     config = process_cli_args(profile, args)
-
-    try:
-        runner = construct_runner(config, args)
-        runner.run()
-    except UserError as e:
-        Output.error(str(e))
-        raise typer.Exit(1)
+    runner = construct_runner(config, args)
+    runner.run()
 
 
 @app.command()
@@ -126,6 +126,7 @@ def shell(
 
 
 @app.command()
+@handle_exceptions
 def translate(
     language: str = typer.Option(..., "--language", "-l", help="Language to translate"),
     profile: Optional[str] = typer.Option(
@@ -149,12 +150,8 @@ def translate(
         if k not in ["profile", "language"] and v is not None
     }
     config = process_cli_args(profile, args)
-    try:
-        runner = construct_runner(config, args)
-        runner.export_translation(language)
-    except UserError as e:
-        Output.error(str(e))
-        raise typer.Exit(1)
+    runner = construct_runner(config, args)
+    runner.export_translation(language)
 
 
 @app.command()
@@ -163,6 +160,7 @@ def deps_tree():
 
 
 @app.command()
+@handle_exceptions
 def update(
     versions: Optional[str] = typer.Option(
         None, "--versions", "-v", help="Odoo version(s) to update, comma-separated"

@@ -1,21 +1,24 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import subprocess
-from rodoo.output import Output
-from rodoo.runner import Runner
 import typer
-from typing import Optional
+from rodoo.runner import Runner
 from rodoo.config import (
     ConfigFile,
     load_and_merge_profiles,
     create_profile,
+    ODOO_URL,
+    ENT_ODOO_URL,
 )
+import functools
+from rodoo.utils.exceptions import UserError, SubprocessError
+from rodoo.output import Output
 
 
 def perform_update(versions_to_update: List[str], source_path: Path):
     repos = {
-        "odoo": "https://github.com/odoo/odoo.git",
-        "enterprise": "https://github.com/odoo/enterprise.git",
+        "odoo": ODOO_URL,
+        "enterprise": ENT_ODOO_URL,
     }
 
     # First, ensure the main 'odoo' and 'enterprise' repos are cloned and up-to-date.
@@ -38,8 +41,8 @@ def perform_update(versions_to_update: List[str], source_path: Path):
             if worktree_path.exists():
                 Output.info(f"  Updating {repo_name} worktree for version {version}...")
                 try:
-                    subprocess.run(["git", "pull"], cwd=str(worktree_path), check=True)
-                except subprocess.CalledProcessError as e:
+                    run_subprocess(["git", "pull"], cwd=str(worktree_path), check=True)
+                except SubprocessError as e:
                     Output.error(
                         f"Failed to update {repo_name} for version {version}: {e}"
                     )
@@ -218,7 +221,7 @@ def process_cli_args(profile: Optional[str], args: dict) -> dict:
     return config
 
 
-def construct_runner(config: dict, cli_args: dict) -> Runner:
+def construct_runner(config: dict, cli_args: dict):
     runner_modules = config.get("modules")
     if runner_modules is None and cli_args.get("module") is not None:
         runner_modules = [m.strip() for m in cli_args["module"].split(",")]
@@ -253,3 +256,71 @@ def construct_runner(config: dict, cli_args: dict) -> Runner:
             runner_kwargs[key] = value
 
     return Runner(**runner_kwargs)
+
+
+def run_subprocess(
+    command: List[str],
+    check: bool = True,
+    **kwargs,
+) -> subprocess.CompletedProcess:
+    """
+    A wrapper around subprocess.run with standardized error handling.
+    Args:
+        command: The command to execute.
+        check: If True, raise SubprocessError on non-zero exit codes.
+        **kwargs: Additional arguments to pass to subprocess.run.
+    Returns:
+        A subprocess.CompletedProcess instance.
+    Raises:
+        SubprocessError: If the command fails and check is True.
+    """
+    # Set text=True by default if not provided and output is captured
+    if kwargs.get("capture_output") and "text" not in kwargs:
+        kwargs["text"] = True
+
+    try:
+        return subprocess.run(
+            command,
+            check=check,
+            **kwargs,
+        )
+    except subprocess.CalledProcessError as e:
+        raise SubprocessError(
+            message=f"Command '{' '.join(str(c) for c in command)}' failed.",
+            command=command,
+            exit_code=e.returncode,
+            stdout=e.stdout or "",
+            stderr=e.stderr or "",
+        ) from e
+    except FileNotFoundError as e:
+        raise SubprocessError(
+            message=f"Command not found: {command[0]}",
+            command=command,
+            exit_code=127,
+            stdout="",
+            stderr=str(e),
+        ) from e
+
+
+def handle_exceptions(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except UserError as e:
+            if isinstance(e, SubprocessError):
+                Output.error(f"A command failed to run: {e.args[0]}")
+                Output.info(f"Command: {' '.join(str(c) for c in e.command)}")
+                if e.stdout:
+                    Output.info(f"Stdout: {e.stdout}")
+                if e.stderr:
+                    Output.error(f"Stderr: {e.stderr}")
+            else:
+                Output.error(str(e))
+            raise typer.Exit(1)
+        except Exception as e:
+            Output.error(str(e))
+            # TODO: for unexpected errors, log the full traceback for debugging
+            raise typer.Exit(1)
+
+    return wrapper

@@ -15,28 +15,21 @@ Runner organizes Odoo source code and development environments in the following 
 """
 
 from dataclasses import dataclass
-from platformdirs import user_config_path
 from pathlib import Path
 from typing import Optional, List
 import ast
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import subprocess
 
-import os
 import typer
 import json
 
 from .distro_dependency import get_distro
-from .config import APP_NAME
-from .exceptions import UserError
-from .odoo_cli import RunCLI, UpgradeCLI, TestCLI, ShellCLI, TranslateCLI
+from .config import CONFIG_DIR, BARE_REPO, ODOO_URL, ENT_ODOO_URL, ENT_BARE_REPO
+from rodoo.utils.exceptions import UserError
+from rodoo.utils import odoo as odoo_utils
 from .output import Output
-
-ODOO_URL = "git@github.com:odoo/odoo.git"
-ENT_ODOO_URL = "git@github.com:odoo/enterprise.git"
-CONFIG_DIR = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
-BARE_REPO = CONFIG_DIR / "odoo.git"
-ENT_BARE_REPO = CONFIG_DIR / "enterprise.git"
+from rodoo.utils.venv import in_virtual_env
 
 
 @dataclass
@@ -117,7 +110,7 @@ class Runner:
 
     ### main API ###
     def run(self):
-        self.odoo_cli_params = RunCLI(self).build_command()
+        self.odoo_cli_params = odoo_utils.build_run_command(self)
         cmd = [
             "uv",
             "run",
@@ -129,15 +122,29 @@ class Runner:
         self._foreground_run(cmd)
 
     def upgrade(self):
-        self.odoo_cli_params = UpgradeCLI(self).build_command()
-        self._foreground_run()
+        self.odoo_cli_params = odoo_utils.build_upgrade_command(self)
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+        ] + self.odoo_cli_params
+        self._foreground_run(cmd)
 
     def run_test(self):
-        self.odoo_cli_params = TestCLI(self).build_command()
-        return self._foreground_run()
+        self.odoo_cli_params = odoo_utils.build_test_command(self)
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+        ] + self.odoo_cli_params
+        return self._foreground_run(cmd)
 
     def run_shell(self):
-        self.odoo_cli_params = ShellCLI(self).build_command()
+        self.odoo_cli_params = odoo_utils.build_shell_command(self)
         cmd = [
             "uv",
             "run",
@@ -146,9 +153,6 @@ class Runner:
             "odoo",
             "shell",
         ] + self.odoo_cli_params
-
-        process_env = os.environ.copy()
-        process_env["VIRTUAL_ENV"] = str(self.venv_path)
 
         self._foreground_run(cmd)
 
@@ -173,20 +177,25 @@ class Runner:
             i18n_path.mkdir(exist_ok=True)
             translation_file = i18n_path / f"{language}.po"
 
-            self.odoo_cli_params = TranslateCLI(
+            self.odoo_cli_params = odoo_utils.build_translate_command(
                 self, module_name, language, translation_file
-            ).build_command()
-            self._foreground_run()
+            )
+            cmd = [
+                "uv",
+                "run",
+                "--python",
+                self.python_version,
+                "odoo",
+            ] + self.odoo_cli_params
+            self._foreground_run(cmd)
             Output.success(
                 f"Translation file for '{module_name}' exported to {translation_file}"
             )
 
     def _foreground_run(self, cmd):
-        process_env = os.environ.copy()
-        process_env["VIRTUAL_ENV"] = str(self.venv_path)
-
         try:
-            subprocess.run(cmd, env=process_env, check=True)
+            with in_virtual_env(self.venv_path):
+                subprocess.run(cmd, check=True)
         except FileNotFoundError:
             raise UserError(f"Command not found: {cmd[0]}")
         except subprocess.CalledProcessError:
@@ -275,14 +284,12 @@ class Runner:
             return False
 
         # Check if odoo is installed in the venv
-        env = os.environ.copy()
-        env["VIRTUAL_ENV"] = str(self.venv_path)
-        result = subprocess.run(
-            ["uv", "pip", "list", "--format", "json"],
-            env=env,
-            capture_output=True,
-            text=True,
-        )
+        with in_virtual_env(self.venv_path):
+            result = subprocess.run(
+                ["uv", "pip", "list", "--format", "json"],
+                capture_output=True,
+                text=True,
+            )
         if result.returncode != 0:
             return False
 
@@ -327,24 +334,26 @@ class Runner:
             )
 
             # install odoo as editable named package
-            env = os.environ.copy()
-            env["VIRTUAL_ENV"] = str(self.venv_path)
-
-            subprocess.run(
-                ["uv", "pip", "install", "-e", f"file://{self.odoo_src_path}#egg=odoo"],
-                check=True,
-                env=env,
-                capture_output=True,
-            )
-
-            requirements_file = self.odoo_src_path / "requirements.txt"
-            if requirements_file.exists():
+            with in_virtual_env(self.venv_path):
                 subprocess.run(
-                    ["uv", "pip", "install", "-r", str(requirements_file)],
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "-e",
+                        f"file://{self.odoo_src_path}#egg=odoo",
+                    ],
                     check=True,
-                    env=env,
                     capture_output=True,
                 )
+
+                requirements_file = self.odoo_src_path / "requirements.txt"
+                if requirements_file.exists():
+                    subprocess.run(
+                        ["uv", "pip", "install", "-r", str(requirements_file)],
+                        check=True,
+                        capture_output=True,
+                    )
 
     def _sanity_check(self):
         if not self.python_version:
@@ -432,12 +441,10 @@ class Runner:
                 if not packages:
                     return
 
-                env = os.environ.copy()
-                env["VIRTUAL_ENV"] = str(self.venv_path)
+                with in_virtual_env(self.venv_path):
+                    subprocess.run(
+                        ["uv", "pip", "install"] + packages,
+                        check=True,
+                        capture_output=True,
+                    )
 
-                subprocess.run(
-                    ["uv", "pip", "install"] + packages,
-                    check=True,
-                    env=env,
-                    capture_output=True,
-                )
