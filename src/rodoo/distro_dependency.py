@@ -222,52 +222,9 @@ class Debian(DistroDependency):
 
 class Arch(DistroDependency):
     packages = [
-        "shadow",
-        "lsb-release",
         "postgresql",
-        "python-asn1crypto",
-        "python-babel",
-        "python-cbor2",
-        "python-chardet",
-        "python-cryptography",
-        "python-dateutil",
-        "python-decorator",
-        "python-docutils",
-        "python-freezegun",
-        "python-geoip2",
-        "python-gevent",
-        "python-greenlet",
-        "python-idna",
-        "python-pillow",
-        "python-jinja",
-        "python-libsass",
-        "python-lxml",
-        "python-markupsafe",
-        "python-openpyxl",
-        "python-passlib",
-        "python-polib",
-        "python-psutil",
-        "python-psycopg2",
-        "python-pyopenssl",
-        "python-pytest",  # required by python-ofxparse
-        "python-rjsmin",
-        "python-qrcode",
-        "python-reportlab",
-        "python-requests",
-        "python-pytz",
-        "python-urllib3",
-        "python-vobject",
-        "python-werkzeug",
-        "python-xlsxwriter",
-        "python-xlrd",
-        "python-zeep",
     ]
-    aur_packages = [
-        "python-num2words",
-        "python-ofxparse",
-        "python-pypdf2",
-        "python-stdnum",
-    ]
+    aur_packages = []
 
     def get_packages(self) -> List[str]:
         return self.packages + self.aur_packages
@@ -286,7 +243,6 @@ class Arch(DistroDependency):
                 if result.returncode != 0:
                     not_installed.append(pkg)
         except (FileNotFoundError, subprocess.CalledProcessError):
-            # yay not available, assume AUR packages are missing
             not_installed.extend(self.aur_packages)
 
         return not_installed

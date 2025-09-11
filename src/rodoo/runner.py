@@ -96,7 +96,7 @@ class Runner:
         # assume dev was setup if
         # package odoo already exists
         if not self._is_env_ready():
-            self._install_system_packages()
+            # self._install_system_packages()
             self._setup_python_env()
 
         # python dependencies
