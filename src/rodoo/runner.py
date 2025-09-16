@@ -270,7 +270,7 @@ class Runner:
                 )
 
     def _install_system_packages(self):
-        distro = get_distro(odoo_src_path=self.odoo_src_path)
+        distro = get_distro()
         if distro:
             need_to_install = distro.get_missing_installed_packages(distro.packages)
             if not need_to_install:
@@ -447,4 +447,3 @@ class Runner:
                         check=True,
                         capture_output=True,
                     )
-
