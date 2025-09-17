@@ -1,7 +1,7 @@
 """
 Runner organizes Odoo source code and development environments in the following directory structure:
 
-~/.config/rodoo/
+~/.local/share/rodoo/
 ├── odoo.git/                    # Bare repository for Odoo core
 ├── enterprise.git/              # Bare repository for Odoo Enterprise
 └── {version}/                   # Version-specific directory
@@ -25,7 +25,7 @@ import typer
 import json
 
 from .distro_dependency import get_distro
-from .config import CONFIG_DIR, BARE_REPO, ODOO_URL, ENT_ODOO_URL, ENT_BARE_REPO
+from .config import APP_HOME, BARE_REPO, ODOO_URL, ENT_ODOO_URL, ENT_BARE_REPO
 from rodoo.utils.exceptions import UserError
 from rodoo.utils import odoo as odoo_utils
 from .output import Output
@@ -55,7 +55,7 @@ class Runner:
     http_interface: Optional[str] = "localhost"
 
     def __post_init__(self) -> None:
-        self.app_dir = CONFIG_DIR
+        self.app_dir = APP_HOME
 
         if not self.python_version:
             venvs_dir = self.app_dir / "venvs"

@@ -9,6 +9,8 @@ from rodoo.config import (
     create_profile,
     ODOO_URL,
     ENT_ODOO_URL,
+    BARE_REPO,
+    ENT_BARE_REPO,
 )
 import functools
 from rodoo.utils.exceptions import UserError, SubprocessError
@@ -17,16 +19,15 @@ from rodoo.output import Output
 
 def perform_update(versions_to_update: List[str], source_path: Path):
     repos = {
-        "odoo": ODOO_URL,
-        "enterprise": ENT_ODOO_URL,
+        "odoo": (ODOO_URL, BARE_REPO),
+        "enterprise": (ENT_ODOO_URL, ENT_BARE_REPO),
     }
 
     # First, ensure the main 'odoo' and 'enterprise' repos are cloned and up-to-date.
-    for repo_name, repo_url in repos.items():
-        repo_path = source_path / repo_name
+    for repo_name, (repo_url, repo_path) in repos.items():
         if not repo_path.exists():
             Output.info(f"Cloning {repo_name} repository from {repo_url}...")
-            subprocess.run(["git", "clone", repo_url, str(repo_path)], check=True)
+            subprocess.run(["git", "clone", "--bare", repo_url, str(repo_path)], check=True)
         else:
             Output.info(f"Fetching updates for {repo_name} repository...")
             subprocess.run(["git", "fetch", "--prune"], cwd=str(repo_path), check=True)
@@ -34,8 +35,7 @@ def perform_update(versions_to_update: List[str], source_path: Path):
     # update/create their worktrees.
     for version in versions_to_update:
         Output.info(f"Processing Odoo version {version}...")
-        for repo_name in repos:
-            repo_path = source_path / repo_name
+        for repo_name, (_, repo_path) in repos.items():
             worktree_path = source_path / version / repo_name
 
             if worktree_path.exists():

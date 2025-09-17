@@ -5,7 +5,7 @@ import typer
 from tomlkit.toml_file import TOMLFile
 from tomlkit.toml_document import TOMLDocument
 from tomlkit.exceptions import TOMLKitError
-from platformdirs import user_config_path
+from platformdirs import user_config_path, user_data_path
 import tomlkit
 
 
@@ -15,8 +15,9 @@ APP_NAME = "rodoo"
 ODOO_URL = "git@github.com:odoo/odoo.git"
 ENT_ODOO_URL = "git@github.com:odoo/enterprise.git"
 CONFIG_DIR = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
-BARE_REPO = CONFIG_DIR / "odoo.git"
-ENT_BARE_REPO = CONFIG_DIR / "enterprise.git"
+APP_HOME = user_data_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
+BARE_REPO = APP_HOME / "odoo.git"
+ENT_BARE_REPO = APP_HOME / "enterprise.git"
 
 
 class Profile(TypedDict, total=False):
@@ -286,8 +287,7 @@ def create_profile() -> tuple[str, Profile, Path]:
     if save_in_cwd:
         config_path = Path.cwd() / "rodoo.toml"
     else:
-        config_dir = Path.home() / ".rodoo"
-        config_dir.mkdir(parents=True, exist_ok=True)
+        config_dir = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
         config_path = config_dir / "rodoo.toml"
 
     config_file = ConfigFile(config_path)

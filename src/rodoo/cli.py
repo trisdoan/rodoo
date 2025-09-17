@@ -11,6 +11,7 @@ from pathlib import Path
 import typer
 from typing import Optional, List
 from rodoo.utils.exceptions import UserError
+from rodoo.config import APP_HOME
 from rodoo.utils.misc import (
     Output,
     perform_update,
@@ -169,7 +170,7 @@ def update(
     """
     Clone and update Odoo src code
     """
-    source_path = Path.home() / ".rodoo" / "src"
+    source_path = APP_HOME
     source_path.mkdir(parents=True, exist_ok=True)
 
     versions_to_update: List[str] = []
