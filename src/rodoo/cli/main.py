@@ -155,11 +155,6 @@ def translate(
 
 
 @app.command()
-def deps_tree():
-    pass
-
-
-@app.command()
 @handle_exceptions
 def update(
     versions: Optional[str] = typer.Option(
