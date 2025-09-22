@@ -197,6 +197,7 @@ class Runner:
             transient=True,
         )
 
+    # TODO: how about take advantage of git-autoshare
     def _setup_odoo_source(self):
         if not self.odoo_src_path.exists():
             with self._create_progress() as progress:
