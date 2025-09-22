@@ -30,4 +30,3 @@ class EnvironmentError(UserError):
     """Exception for environment-related errors (e.g., missing dependencies)."""
 
     pass
-

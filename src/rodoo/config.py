@@ -7,7 +7,7 @@ from tomlkit.toml_document import TOMLDocument
 from tomlkit.exceptions import TOMLKitError
 from platformdirs import user_config_path, user_data_path
 import tomlkit
-
+from rodoo.utils.exceptions import ConfigurationError
 
 FILENAMES = [".rodoo.toml", "rodoo.toml"]
 APP_NAME = "rodoo"
@@ -287,7 +287,9 @@ def create_profile() -> tuple[str, Profile, Path]:
     if save_in_cwd:
         config_path = Path.cwd() / "rodoo.toml"
     else:
-        config_dir = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
+        config_dir = user_config_path(
+            appname=APP_NAME, appauthor=False, ensure_exists=True
+        )
         config_path = config_dir / "rodoo.toml"
 
     config_file = ConfigFile(config_path)

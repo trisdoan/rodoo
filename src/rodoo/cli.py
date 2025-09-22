@@ -7,7 +7,6 @@ Desired behaviors of cli
 5. Args only, no profile, no config → run directly
 """
 
-from pathlib import Path
 import typer
 from typing import Optional, List
 from rodoo.utils.exceptions import UserError

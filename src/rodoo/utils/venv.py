@@ -15,4 +15,3 @@ def in_virtual_env(venv_path: Path):
         else:
             if "VIRTUAL_ENV" in os.environ:
                 del os.environ["VIRTUAL_ENV"]
-

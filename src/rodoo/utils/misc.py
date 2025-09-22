@@ -27,7 +27,9 @@ def perform_update(versions_to_update: List[str], source_path: Path):
     for repo_name, (repo_url, repo_path) in repos.items():
         if not repo_path.exists():
             Output.info(f"Cloning {repo_name} repository from {repo_url}...")
-            subprocess.run(["git", "clone", "--bare", repo_url, str(repo_path)], check=True)
+            subprocess.run(
+                ["git", "clone", "--bare", repo_url, str(repo_path)], check=True
+            )
         else:
             Output.info(f"Fetching updates for {repo_name} repository...")
             subprocess.run(["git", "fetch", "--prune"], cwd=str(repo_path), check=True)
