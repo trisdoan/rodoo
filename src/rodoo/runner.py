@@ -1,7 +1,7 @@
 """
 Runner organizes Odoo source code and development environments in the following directory structure:
 
-~/.config/rodoo/
+~/.local/share/rodoo/
 ├── odoo.git/                    # Bare repository for Odoo core
 ├── enterprise.git/              # Bare repository for Odoo Enterprise
 └── {version}/                   # Version-specific directory
@@ -15,28 +15,21 @@ Runner organizes Odoo source code and development environments in the following 
 """
 
 from dataclasses import dataclass
-from platformdirs import user_config_path
 from pathlib import Path
 from typing import Optional, List
 import ast
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import subprocess
-import shlex
-import os
-import time
+
 import typer
 import json
 
 from .distro_dependency import get_distro
-from .config import APP_NAME
-from .exceptions import UserError
+from .config import APP_HOME, BARE_REPO, ODOO_URL, ENT_ODOO_URL, ENT_BARE_REPO
+from rodoo.utils.exceptions import UserError
+from rodoo.utils import odoo as odoo_utils
 from .output import Output
-
-ODOO_URL = "git@github.com:odoo/odoo.git"
-ENT_ODOO_URL = "git@github.com:odoo/enterprise.git"
-CONFIG_DIR = user_config_path(appname=APP_NAME, appauthor=False, ensure_exists=True)
-BARE_REPO = CONFIG_DIR / "odoo.git"
-ENT_BARE_REPO = CONFIG_DIR / "enterprise.git"
+from rodoo.utils.venv import in_virtual_env
 
 
 @dataclass
@@ -62,7 +55,7 @@ class Runner:
     http_interface: Optional[str] = "localhost"
 
     def __post_init__(self) -> None:
-        self.app_dir = CONFIG_DIR
+        self.app_dir = APP_HOME
 
         if not self.python_version:
             venvs_dir = self.app_dir / "venvs"
@@ -115,21 +108,32 @@ class Runner:
             module_name = "_".join(self.modules) if self.modules else "nan"
             self.db = f"v{version_major}_{module_name}"
 
-        # prepare odoo cli arguments
-        self.odoo_cli_params = self._prepare_odoo_cli_params()
-
     ### main API ###
     def run(self):
-        self._foreground_run()
+        self.odoo_cli_params = odoo_utils.build_run_command(self)
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+        ] + self.odoo_cli_params
+
+        self._foreground_run(cmd)
 
     def upgrade(self):
-        pass
+        self.odoo_cli_params = odoo_utils.build_upgrade_command(self)
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+        ] + self.odoo_cli_params
+        self._foreground_run(cmd)
 
     def run_test(self):
-        pass
-
-    # TODO: implement detach mode
-    def _background_run(self):
+        self.odoo_cli_params = odoo_utils.build_test_command(self)
         cmd = [
             "uv",
             "run",
@@ -137,56 +141,65 @@ class Runner:
             self.python_version,
             "odoo",
         ] + self.odoo_cli_params
+        return self._foreground_run(cmd)
 
-        process_env = os.environ.copy()
-        process_env["VIRTUAL_ENV"] = str(self.venv_path)
+    def run_shell(self):
+        self.odoo_cli_params = odoo_utils.build_shell_command(self)
+        cmd = [
+            "uv",
+            "run",
+            "--python",
+            self.python_version,
+            "odoo",
+            "shell",
+        ] + self.odoo_cli_params
 
-        try:
-            process = subprocess.Popen(
-                cmd,
-                env=process_env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            # Wait for a few seconds to see if it fails
-            time.sleep(3)
-            # Check if the process has already terminated
-            poll_result = process.poll()
-            if poll_result is not None:
-                if poll_result != 0:
-                    stdout, stderr = process.communicate()
-                    raise UserError(
-                        f"Odoo failed to start with exit code {poll_result}.\n--- STDERR ---\n{stderr}\n--- STDOUT ---\n{stdout}"
-                    )
-            else:
-                # Assume success after 3s
-                Output.success(
-                    f"Odoo server started in the background with PID: {process.pid}"
+        self._foreground_run(cmd)
+
+    def export_translation(self, language: str):
+        if not self.modules:
+            raise UserError("At least one module is required for translation export.")
+
+        for module_name in self.modules:
+            module_path = None
+            for path in self.modules_paths:
+                if (path / module_name).exists():
+                    module_path = path / module_name
+                    break
+
+            if not module_path:
+                Output.warning(
+                    f"Could not find path for module '{module_name}', skipping."
                 )
-                Output.info("You can stop the server using the 'stop' command.")
+                continue
 
-        except FileNotFoundError:
-            raise UserError(f"Command not found: {cmd[0]}")
-        except Exception as e:
-            raise UserError(f"Odoo failed to start. Details:\n{e}") from e
+            i18n_path = module_path / "i18n"
+            i18n_path.mkdir(exist_ok=True)
+            translation_file = i18n_path / f"{language}.po"
 
-    def _foreground_run(self):
-        cmd = [
-            "uv",
-            "run",
-            "--python",
-            self.python_version,
-            "odoo",
-        ] + self.odoo_cli_params
+            self.odoo_cli_params = odoo_utils.build_translate_command(
+                self, module_name, language, translation_file
+            )
+            cmd = [
+                "uv",
+                "run",
+                "--python",
+                self.python_version,
+                "odoo",
+            ] + self.odoo_cli_params
+            self._foreground_run(cmd)
+            Output.success(
+                f"Translation file for '{module_name}' exported to {translation_file}"
+            )
 
-        process_env = os.environ.copy()
-        process_env["VIRTUAL_ENV"] = str(self.venv_path)
-
+    def _foreground_run(self, cmd):
         try:
-            subprocess.run(cmd, env=process_env)
+            with in_virtual_env(self.venv_path):
+                subprocess.run(cmd, check=True)
         except FileNotFoundError:
             raise UserError(f"Command not found: {cmd[0]}")
+        except subprocess.CalledProcessError:
+            raise UserError("Odoo command execution failed.")
         except Exception as e:
             raise UserError(f"Odoo failed to start. Details:\n{e}") from e
 
@@ -197,6 +210,7 @@ class Runner:
             transient=True,
         )
 
+    # TODO: how about take advantage of git-autoshare
     def _setup_odoo_source(self):
         if not self.odoo_src_path.exists():
             with self._create_progress() as progress:
@@ -256,7 +270,7 @@ class Runner:
                 )
 
     def _install_system_packages(self):
-        distro = get_distro(odoo_src_path=self.odoo_src_path)
+        distro = get_distro()
         if distro:
             need_to_install = distro.get_missing_installed_packages(distro.packages)
             if not need_to_install:
@@ -270,14 +284,12 @@ class Runner:
             return False
 
         # Check if odoo is installed in the venv
-        env = os.environ.copy()
-        env["VIRTUAL_ENV"] = str(self.venv_path)
-        result = subprocess.run(
-            ["uv", "pip", "list", "--format", "json"],
-            env=env,
-            capture_output=True,
-            text=True,
-        )
+        with in_virtual_env(self.venv_path):
+            result = subprocess.run(
+                ["uv", "pip", "list", "--format", "json"],
+                capture_output=True,
+                text=True,
+            )
         if result.returncode != 0:
             return False
 
@@ -322,24 +334,26 @@ class Runner:
             )
 
             # install odoo as editable named package
-            env = os.environ.copy()
-            env["VIRTUAL_ENV"] = str(self.venv_path)
-
-            subprocess.run(
-                ["uv", "pip", "install", "-e", f"file://{self.odoo_src_path}#egg=odoo"],
-                check=True,
-                env=env,
-                capture_output=True,
-            )
-
-            requirements_file = self.odoo_src_path / "requirements.txt"
-            if requirements_file.exists():
+            with in_virtual_env(self.venv_path):
                 subprocess.run(
-                    ["uv", "pip", "install", "-r", str(requirements_file)],
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "-e",
+                        f"file://{self.odoo_src_path}#egg=odoo",
+                    ],
                     check=True,
-                    env=env,
                     capture_output=True,
                 )
+
+                requirements_file = self.odoo_src_path / "requirements.txt"
+                if requirements_file.exists():
+                    subprocess.run(
+                        ["uv", "pip", "install", "-r", str(requirements_file)],
+                        check=True,
+                        capture_output=True,
+                    )
 
     def _sanity_check(self):
         if not self.python_version:
@@ -399,16 +413,6 @@ class Runner:
                 error_msg += f"The following transitive dependencies were not found: {', '.join(missing_transitive)}."
             raise UserError(error_msg)
 
-    # TODO: workaround to fix failed buid
-    def _patch_odoo_requirements(self):
-        # requirements_file = self.odoo_root_dir / "odoo" / "requirements.txt"
-        # if not requirements_file.is_file():
-        #     return
-        #
-        # if self.version == 16.0:
-        #     content = requirements_file.read_text()
-        pass
-
     def _get_module_paths(self):
         paths = []
         if (path := self.odoo_src_path / "addons").exists():
@@ -437,57 +441,9 @@ class Runner:
                 if not packages:
                     return
 
-                env = os.environ.copy()
-                env["VIRTUAL_ENV"] = str(self.venv_path)
-
-                subprocess.run(
-                    ["uv", "pip", "install"] + packages,
-                    check=True,
-                    env=env,
-                    capture_output=True,
-                )
-
-    def _prepare_odoo_cli_params(self):
-        options = []
-
-        options.extend(["-d", self.db])
-        options.extend(["--addons-path", ",".join(str(p) for p in self.modules_paths)])
-
-        if self.force_install:
-            options.extend(["-i", ",".join(self.modules)])
-        if self.force_update:
-            options.extend(["-u", ",".join(self.modules)])
-
-        if self.load:
-            options.extend(["--load", ",".join(self.load)])
-
-        if self.extra_params:
-            options.extend(shlex.split(self.extra_params))
-
-        managed_params = {
-            "db_host": self.db_host,
-            "db_user": self.db_user,
-            "db_password": self.db_password,
-            "workers": self.workers,
-            "max-cron-threads": self.max_cron_threads,
-            "limit-time-cpu": self.limit_time_cpu,
-            "limit-time-real": self.limit_time_real,
-            "http-interface": self.http_interface,
-        }
-
-        existing_flags = {opt.split("=")[0] for opt in options if opt.startswith("--")}
-
-        for key, value in managed_params.items():
-            cli_key = f"--{key}"
-            if value and cli_key not in existing_flags:
-                options.extend([cli_key, str(value)])
-
-        # path to store server pid, used to identify active odoo process
-        options.extend(
-            [
-                "--pidfile",
-                "=",
-            ]
-        )
-
-        return options
+                with in_virtual_env(self.venv_path):
+                    subprocess.run(
+                        ["uv", "pip", "install"] + packages,
+                        check=True,
+                        capture_output=True,
+                    )

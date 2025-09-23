@@ -13,6 +13,7 @@ from rodoo.config import (
     create_profile,
     FILENAMES,
 )
+from rodoo.utils.exceptions import ConfigurationError
 
 
 class TestConfigFile:
@@ -171,16 +172,16 @@ class TestSanityCheck:
 
     def test_sanity_check_invalid_config_type(self):
         """Test _sanity_check with invalid config type."""
-        with patch("rodoo.output.Output.error") as mock_error:
+        with pytest.raises(
+            ConfigurationError, match="Configuration must be a dictionary"
+        ):
             _sanity_check("invalid")
-            mock_error.assert_called_once()
 
     def test_sanity_check_invalid_profile_type(self):
         """Test _sanity_check with invalid profile type."""
         config = {"profile": "invalid"}
-        with patch("rodoo.output.Output.error"):
-            with pytest.raises(AttributeError):
-                _sanity_check(config)
+        with pytest.raises(ConfigurationError, match="Profiles must be a dictionary"):
+            _sanity_check(config)
 
     def test_sanity_check_invalid_version_type(self):
         """Test _sanity_check with invalid version type."""
@@ -191,9 +192,10 @@ class TestSanityCheck:
                 }
             }
         }
-        with patch("rodoo.output.Output.error") as mock_error:
+        with pytest.raises(
+            ConfigurationError, match="Version in profile 'test' must be a number"
+        ):
             _sanity_check(config)
-            mock_error.assert_called_once()
 
 
 class TestCreateProfile:
