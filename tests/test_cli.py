@@ -1,14 +1,14 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
-from click.exceptions import Exit
+import typer
 from rodoo.utils.misc import (
     _parse_cli_params,
     _validate_required_cli_params,
     _handle_no_cli_params,
     _handle_cli_params_present,
     process_cli_args,
-    _construct_runner,
+    construct_runner,
 )
 
 
@@ -43,7 +43,7 @@ class TestValidateRequiredCliParams:
         """Test _validate_required_cli_params missing modules."""
         cli_params = {"version": 16.0}
         with patch("rodoo.output.Output.error") as mock_error:
-            with pytest.raises(Exit):
+            with pytest.raises(typer.Exit):
                 _validate_required_cli_params(cli_params)
             mock_error.assert_called_once()
 
@@ -51,15 +51,15 @@ class TestValidateRequiredCliParams:
         """Test _validate_required_cli_params missing version."""
         cli_params = {"modules": ["base"]}
         with patch("rodoo.output.Output.error") as mock_error:
-            with pytest.raises(Exit):
+            with pytest.raises(typer.Exit):
                 _validate_required_cli_params(cli_params)
             mock_error.assert_called_once()
 
 
 class TestHandleNoCliParams:
-    @patch("rodoo.cli.load_and_merge_profiles")
-    @patch("rodoo.cli.Output.confirm")
-    @patch("rodoo.cli.create_profile")
+    @patch("rodoo.utils.misc.load_and_merge_profiles")
+    @patch("rodoo.utils.misc.Output.confirm")
+    @patch("rodoo.utils.misc.create_profile")
     def test_handle_no_cli_params_no_profiles_create_new(
         self, mock_create_profile, mock_confirm, mock_load_profiles
     ):
@@ -75,8 +75,8 @@ class TestHandleNoCliParams:
         result = _handle_no_cli_params(None)
         assert result == {"modules": ["base"], "version": 16.0}
 
-    @patch("rodoo.cli.load_and_merge_profiles")
-    @patch("rodoo.cli.Output.confirm")
+    @patch("rodoo.utils.misc.load_and_merge_profiles")
+    @patch("rodoo.utils.misc.Output.confirm")
     def test_handle_no_cli_params_no_profiles_exit(
         self, mock_confirm, mock_load_profiles
     ):
@@ -84,12 +84,12 @@ class TestHandleNoCliParams:
         mock_load_profiles.return_value = ({}, {})
         mock_confirm.return_value = False
 
-        with pytest.raises(Exit):
+        with pytest.raises(typer.Exit):
             _handle_no_cli_params(None)
 
-    @patch("rodoo.cli.load_and_merge_profiles")
-    @patch("rodoo.cli.typer.prompt")
-    @patch("rodoo.cli.Output.confirm")
+    @patch("rodoo.utils.misc.load_and_merge_profiles")
+    @patch("rodoo.utils.misc.typer.prompt")
+    @patch("rodoo.utils.misc.Output.confirm")
     def test_handle_no_cli_params_with_profiles(
         self, mock_confirm, mock_prompt, mock_load_profiles
     ):
@@ -105,7 +105,7 @@ class TestHandleNoCliParams:
 
 
 class TestHandleCliParamsPresent:
-    @patch("rodoo.config.load_and_merge_profiles")
+    @patch("rodoo.utils.misc.load_and_merge_profiles")
     @patch("pathlib.Path.cwd")
     def test_handle_cli_params_present_no_profiles_in_cwd(
         self, mock_cwd, mock_load_profiles
@@ -118,11 +118,11 @@ class TestHandleCliParamsPresent:
         result = _handle_cli_params_present(None, cli_params)
         assert result == cli_params
 
-    @patch("rodoo.cli.load_and_merge_profiles")
+    @patch("rodoo.utils.misc.load_and_merge_profiles")
     @patch("pathlib.Path.cwd")
-    @patch("rodoo.cli.Output.confirm")
-    @patch("rodoo.cli.ConfigFile")
-    @patch("rodoo.cli.typer.prompt")
+    @patch("rodoo.utils.misc.Output.confirm")
+    @patch("rodoo.utils.misc.ConfigFile")
+    @patch("rodoo.utils.misc.typer.prompt")
     def test_handle_cli_params_present_update_profile(
         self,
         mock_prompt,
@@ -156,14 +156,14 @@ class TestHandleCliParamsPresent:
 class TestProcessCliArgs:
     def test_process_cli_args_no_params(self):
         """Test process_cli_args with no parameters."""
-        with patch("rodoo.cli._handle_no_cli_params") as mock_handler:
+        with patch("rodoo.utils.misc._handle_no_cli_params") as mock_handler:
             mock_handler.return_value = {"modules": ["base"], "version": 16.0}
             result = process_cli_args(None, {})
             assert result == {"modules": ["base"], "version": 16.0}
 
     def test_process_cli_args_with_params(self):
         """Test process_cli_args with parameters."""
-        with patch("rodoo.cli._handle_cli_params_present") as mock_handler:
+        with patch("rodoo.utils.misc._handle_cli_params_present") as mock_handler:
             mock_handler.return_value = {"modules": ["base"], "version": 16.0}
             result = process_cli_args(None, {"modules": ["base"], "version": 16.0})
             assert result == {"modules": ["base"], "version": 16.0}
@@ -171,22 +171,22 @@ class TestProcessCliArgs:
     def test_process_cli_args_missing_required(self):
         """Test process_cli_args with missing required parameters."""
         with patch("rodoo.output.Output.error") as mock_error:
-            with pytest.raises(Exit):
+            with pytest.raises(typer.Exit):
                 process_cli_args(None, {"modules": ["base"]})
             mock_error.assert_called_once()
 
 
 class TestConstructRunner:
     def test_construct_runner_basic(self):
-        """Test _construct_runner with basic config."""
+        """Test construct_runner with basic config."""
         config = {"modules": ["base"], "version": 16.0, "python_version": "3.10"}
         args = {}
 
-        with patch("rodoo.cli.Runner") as mock_runner_class:
+        with patch("rodoo.utils.misc.Runner") as mock_runner_class:
             mock_runner = MagicMock()
             mock_runner_class.return_value = mock_runner
 
-            _construct_runner(config, args)
+            construct_runner(config, args)
 
             # Just check that Runner was called with the basic parameters
             call_args = mock_runner_class.call_args
@@ -195,15 +195,15 @@ class TestConstructRunner:
             assert call_args[1]["python_version"] == "3.10"
 
     def test_construct_runner_with_module_in_args(self):
-        """Test _construct_runner with module in args."""
+        """Test construct_runner with module in args."""
         config = {"version": 16.0, "python_version": "3.10"}
         args = {"module": "base,sale"}
 
-        with patch("rodoo.cli.Runner") as mock_runner_class:
+        with patch("rodoo.utils.misc.Runner") as mock_runner_class:
             mock_runner = MagicMock()
             mock_runner_class.return_value = mock_runner
 
-            _construct_runner(config, args)
+            construct_runner(config, args)
 
             # Should use modules from args
             call_args = mock_runner_class.call_args[1]

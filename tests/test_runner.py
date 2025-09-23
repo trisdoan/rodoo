@@ -16,10 +16,8 @@ class TestRunnerInit:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_runner_init_basic(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -55,10 +53,8 @@ class TestRunnerInit:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_runner_init_existing_venv(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -103,10 +99,8 @@ class TestRunnerSetupOdooSource:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_setup_odoo_source_new(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -145,10 +139,8 @@ class TestRunnerSetupOdooSource:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_setup_odoo_source_existing(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -182,10 +174,8 @@ class TestRunnerEnsureBareRepo:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_ensure_bare_repo_new(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -227,10 +217,8 @@ class TestRunnerEnsureBareRepo:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_ensure_bare_repo_existing(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -265,10 +253,8 @@ class TestRunnerIsEnvReady:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_is_env_ready_venv_not_exists(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -302,10 +288,8 @@ class TestRunnerIsEnvReady:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_is_env_ready_venv_exists_odoo_installed(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -341,10 +325,8 @@ class TestRunnerIsEnvReady:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_is_env_ready_venv_exists_odoo_not_installed(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -379,7 +361,6 @@ class TestRunnerSanityCheck:
             patch("rodoo.runner.Runner._install_system_packages"),
             patch("rodoo.runner.Runner._setup_python_env"),
             patch("rodoo.runner.Runner._install_extra_python_packages"),
-            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
         ):
             runner = Runner.__new__(Runner)
             runner.modules = ["base"]
@@ -402,7 +383,6 @@ class TestRunnerSanityCheck:
             patch("rodoo.runner.Runner._install_system_packages"),
             patch("rodoo.runner.Runner._setup_python_env"),
             patch("rodoo.runner.Runner._install_extra_python_packages"),
-            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
         ):
             runner = Runner.__new__(Runner)
             runner.modules = []
@@ -422,7 +402,6 @@ class TestRunnerSanityCheck:
             patch("rodoo.runner.Runner._install_system_packages"),
             patch("rodoo.runner.Runner._setup_python_env"),
             patch("rodoo.runner.Runner._install_extra_python_packages"),
-            patch("rodoo.runner.Runner._prepare_odoo_cli_params"),
             patch("pathlib.Path.is_dir", return_value=True),
             patch("pathlib.Path.iterdir"),
             patch("pathlib.Path.exists", return_value=True),
@@ -454,10 +433,8 @@ class TestRunnerGetModulePaths:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_get_module_paths_basic(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -492,10 +469,8 @@ class TestRunnerGetModulePaths:
     @patch("rodoo.runner.Runner._install_system_packages")
     @patch("rodoo.runner.Runner._setup_python_env")
     @patch("rodoo.runner.Runner._install_extra_python_packages")
-    @patch("rodoo.runner.Runner._prepare_odoo_cli_params")
     def test_get_module_paths_with_enterprise(
         self,
-        mock_prepare_cli,
         mock_install_extra,
         mock_setup_python,
         mock_install_system,
@@ -517,82 +492,3 @@ class TestRunnerGetModulePaths:
 
         assert len(paths) == 3
         assert str(paths[2]) == str(runner.enterprise_src_path)
-
-
-class TestRunnerPrepareOdooCliParams:
-    def test_prepare_odoo_cli_params_basic(self):
-        """Test _prepare_odoo_cli_params with basic parameters."""
-        # Create a minimal runner instance
-        with (
-            patch("rodoo.runner.Runner._setup_odoo_source"),
-            patch("rodoo.runner.Runner._is_env_ready"),
-            patch("rodoo.runner.Runner._install_system_packages"),
-            patch("rodoo.runner.Runner._setup_python_env"),
-            patch("rodoo.runner.Runner._install_extra_python_packages"),
-            patch("rodoo.runner.Runner._sanity_check"),
-            patch("rodoo.runner.Runner._get_module_paths", return_value=[]),
-        ):
-            runner = Runner.__new__(Runner)
-            runner.modules = ["base", "sale"]
-            runner.version = 16.0
-            runner.python_version = "3.10"
-            runner.db = "test_db"
-            runner.force_install = True
-            runner.force_update = False
-            runner.extra_params = "--debug"
-            runner.load = None
-            runner.modules_paths = []
-            runner.db_host = None
-            runner.db_user = None
-            runner.db_password = None
-            runner.workers = 0
-            runner.max_cron_threads = 0
-            runner.limit_time_cpu = 3600
-            runner.limit_time_real = 3600
-            runner.http_interface = "localhost"
-
-            params = runner._prepare_odoo_cli_params()
-
-            assert "-d" in params
-            assert "test_db" in params
-            assert "--addons-path" in params
-            assert "-i" in params
-            assert "base,sale" in params
-            assert "--debug" in params
-
-    def test_prepare_odoo_cli_params_with_load(self):
-        """Test _prepare_odoo_cli_params with load parameter."""
-        # Create a minimal runner instance
-        with (
-            patch("rodoo.runner.Runner._setup_odoo_source"),
-            patch("rodoo.runner.Runner._is_env_ready"),
-            patch("rodoo.runner.Runner._install_system_packages"),
-            patch("rodoo.runner.Runner._setup_python_env"),
-            patch("rodoo.runner.Runner._install_extra_python_packages"),
-            patch("rodoo.runner.Runner._sanity_check"),
-            patch("rodoo.runner.Runner._get_module_paths", return_value=[]),
-        ):
-            runner = Runner.__new__(Runner)
-            runner.modules = ["base"]
-            runner.version = 16.0
-            runner.python_version = "3.10"
-            runner.load = ["base", "web"]
-            runner.modules_paths = []
-            runner.db = "test_db"
-            runner.force_install = False
-            runner.force_update = False
-            runner.extra_params = None
-            runner.db_host = None
-            runner.db_user = None
-            runner.db_password = None
-            runner.workers = 0
-            runner.max_cron_threads = 0
-            runner.limit_time_cpu = 3600
-            runner.limit_time_real = 3600
-            runner.http_interface = "localhost"
-
-            params = runner._prepare_odoo_cli_params()
-
-            assert "--load" in params
-            load_index = params.index("--load")
-            assert params[load_index + 1] == "base,web"
