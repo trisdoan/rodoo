@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.1 (2025-11-11)
+
+### Bug Fixes
+
+- Correct branch existence check for bare repositories
+  ([`c65b34b`](https://github.com/trisdoan/rodoo/commit/c65b34b0bb8c54954a43ea14f3794f5b0bcc5ef5))
+
+
 ## v1.1.0 (2025-09-23)
 
 ### Bug Fixes
