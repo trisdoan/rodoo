@@ -27,12 +27,12 @@ def perform_update(versions_to_update: List[str], source_path: Path):
     for repo_name, (repo_url, repo_path) in repos.items():
         if not repo_path.exists():
             Output.info(f"Cloning {repo_name} repository from {repo_url}...")
-            subprocess.run(
+            run_subprocess(
                 ["git", "clone", "--bare", repo_url, str(repo_path)], check=True
             )
         else:
             Output.info(f"Fetching updates for {repo_name} repository...")
-            subprocess.run(["git", "fetch", "--prune"], cwd=str(repo_path), check=True)
+            run_subprocess(["git", "fetch", "--prune"], cwd=str(repo_path), check=True)
 
     # update/create their worktrees.
     for version in versions_to_update:
@@ -52,29 +52,30 @@ def perform_update(versions_to_update: List[str], source_path: Path):
                 Output.info(f"  Creating {repo_name} worktree for version {version}...")
                 worktree_path.parent.mkdir(parents=True, exist_ok=True)
                 try:
-                    branch_exists_cmd = subprocess.run(
+                    branch_exists_cmd = run_subprocess(
                         [
                             "git",
                             "show-ref",
                             "--verify",
-                            f"refs/remotes/origin/{version}",
+                            f"refs/heads/{version}",
                         ],
                         cwd=str(repo_path),
                         capture_output=True,
                         text=True,
+                        check=False,
                     )
                     if branch_exists_cmd.returncode != 0:
                         Output.warning(
-                            f"  Branch '{version}' does not exist in {repo_name} remote. Skipping."
+                            f"  Branch '{version}' does not exist in {repo_name} bare repository. Skipping."
                         )
                         continue
 
-                    subprocess.run(
+                    run_subprocess(
                         ["git", "worktree", "add", str(worktree_path), version],
                         cwd=str(repo_path),
                         check=True,
                     )
-                except subprocess.CalledProcessError as e:
+                except SubprocessError as e:
                     Output.error(
                         f"Failed to create worktree for {repo_name} version {version}: {e}"
                     )
