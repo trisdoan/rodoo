@@ -36,6 +36,9 @@ def start(
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+    path: Optional[str] = typer.Option(
+        None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
 ):
     """Running Odoo instance"""
     args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
@@ -57,6 +60,9 @@ def upgrade(
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+    path: Optional[str] = typer.Option(
+        None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
 ):
     """
     Running update Odoo and exist
@@ -84,6 +90,9 @@ def test(
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+    path: Optional[str] = typer.Option(
+        None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
 ):
     """
     Running tests
@@ -111,6 +120,9 @@ def shell(
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+    path: Optional[str] = typer.Option(
+        None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
 ):
     """
     Running Odoo shell
@@ -140,6 +152,9 @@ def translate(
     ),
     python_version: Optional[str] = typer.Option(None, "--python", "-py"),
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
+    path: Optional[str] = typer.Option(
+        None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
 ):
     """
     Export translation file for a module
