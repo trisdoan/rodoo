@@ -39,6 +39,12 @@ def start(
     path: Optional[str] = typer.Option(
         None, "--path", help="Path to Odoo modules, comma-separated."
     ),
+    force_install: Optional[bool] = typer.Option(
+        None, "--force-install", help="Force reinstallation of Python dependencies."
+    ),
+    force_update: Optional[bool] = typer.Option(
+        None, "--force-update", help="Force update of Odoo sources."
+    ),
 ):
     """Running Odoo instance"""
     args = {k: v for k, v in locals().items() if k != "profile" and v is not None}
@@ -62,6 +68,12 @@ def upgrade(
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
     path: Optional[str] = typer.Option(
         None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
+    force_install: Optional[bool] = typer.Option(
+        None, "--force-install", help="Force reinstallation of Python dependencies."
+    ),
+    force_update: Optional[bool] = typer.Option(
+        None, "--force-update", help="Force update of Odoo sources."
     ),
 ):
     """
@@ -93,6 +105,12 @@ def test(
     path: Optional[str] = typer.Option(
         None, "--path", help="Path to Odoo modules, comma-separated."
     ),
+    force_install: Optional[bool] = typer.Option(
+        None, "--force-install", help="Force reinstallation of Python dependencies."
+    ),
+    force_update: Optional[bool] = typer.Option(
+        None, "--force-update", help="Force update of Odoo sources."
+    ),
 ):
     """
     Running tests
@@ -122,6 +140,12 @@ def shell(
     db: Optional[str] = typer.Option(None, "--db", "-d", help="Database name"),
     path: Optional[str] = typer.Option(
         None, "--path", help="Path to Odoo modules, comma-separated."
+    ),
+    force_install: Optional[bool] = typer.Option(
+        None, "--force-install", help="Force reinstallation of Python dependencies."
+    ),
+    force_update: Optional[bool] = typer.Option(
+        None, "--force-update", help="Force update of Odoo sources."
     ),
 ):
     """
@@ -155,6 +179,12 @@ def translate(
     path: Optional[str] = typer.Option(
         None, "--path", help="Path to Odoo modules, comma-separated."
     ),
+    force_install: Optional[bool] = typer.Option(
+        None, "--force-install", help="Force reinstallation of Python dependencies."
+    ),
+    force_update: Optional[bool] = typer.Option(
+        None, "--force-update", help="Force update of Odoo sources."
+    ),
 ):
     """
     Export translation file for a module
@@ -162,7 +192,8 @@ def translate(
     args = {
         k: v
         for k, v in locals().items()
-        if k not in ["profile", "language"] and v is not None
+        if k not in ["profile", "language", "force_install", "force_update"]
+        and v is not None
     }
     config = process_cli_args(profile, args)
     runner = construct_runner(config, args)
