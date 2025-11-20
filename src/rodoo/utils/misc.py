@@ -87,6 +87,8 @@ def _parse_cli_params(args: dict) -> dict:
         if val is not None:
             if arg == "module":
                 cli_params["modules"] = [m.strip() for m in val.split(",")]
+            elif arg == "path":
+                cli_params["paths"] = [p.strip() for p in val.split(",")]
             elif arg != "profile":
                 cli_params[arg] = val
     return cli_params
@@ -220,6 +222,9 @@ def process_cli_args(profile: Optional[str], args: dict) -> dict:
     if not config.get("modules") or not config.get("version"):
         Output.error("No Odoo modules/version specified to run Odoo")
         raise typer.Exit(1)
+
+    if not config.get("paths"):
+        config["paths"] = [str(Path.cwd())]
 
     return config
 
